@@ -1,0 +1,5 @@
+/node_modules
+/.vscode
+deeper-chain.compact.wasm
+package-lock.json
+yarn.lock
