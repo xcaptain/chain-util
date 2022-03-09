@@ -8,7 +8,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@polkadot/api": "^7.2.1"
+    "@polkadot/api": "^7.2.1",
+    "axios": "^0.26.0",
+    "txwrapper-deeper": "^1.0.0"
   },
   "devDependencies": {
     "@types/jest": "^27.4.1",
