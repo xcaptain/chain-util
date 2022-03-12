@@ -1,4 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
+import { construct, getRegistry, createMetadata, methods, TypeRegistry } from 'txwrapper-deeper';
+import { IKeyringPair } from '@polkadot/types/types';
+import { EXTRINSIC_VERSION } from '@polkadot/types/extrinsic/v4/Extrinsic';
 
 class SideCar {
     readonly client: AxiosInstance;
@@ -35,6 +38,117 @@ class SideCar {
     async getAccountBalanceInfo(address: string): Promise<IAccountBalance> {
         const res = await this.client.get<IAccountBalanceResponse>(`/accounts/${address}/balance-info`);
         return convertAccountBalance(res.data);
+    }
+
+    // 获取构建离线交易需要的参数
+    async getTransactionMaterial(): Promise<ITransactionMaterial> {
+        const res = await this.client.get<ITransactionMaterialResponse>('/transaction/material', {
+            params: {
+                metadata: 'scale',
+            },
+        });
+        return convertTransactionMaterial(res.data);
+    }
+
+    async getLatestBlock(): Promise<IBlockHeader> {
+        const res = await this.client.get<IBlockHeaderResponse>('/blocks/head');
+        return convertBlockHeader(res.data);
+    }
+
+    async sendTx(signedTx: string): Promise<string> {
+        const res = await this.client.post('/transaction', {
+            tx: signedTx,
+        }); // TODO: 处理交易异常情况
+        return res.data.hash;
+    }
+
+    async imOnline(deviceKeyPair: IKeyringPair): Promise<string> {
+        const method = methods.deeperNode.imOnline;
+        const { baseTxInfo, txOptions, metadataRpc, registry } = await this.getTransactionArgs(deviceKeyPair.address);
+        const unsigned = method({}, baseTxInfo, txOptions);
+        const signingPayload = construct.signingPayload(unsigned, { registry }); // 签名原文
+        const signature = await this.signWith(deviceKeyPair, signingPayload, registry, metadataRpc); // 签名值
+        const tx = construct.signedTx(unsigned, signature, { metadataRpc, registry }); // 带有签名的交易
+        return await this.sendTx(tx);
+    }
+
+    async registerServer(deviceKeyPair: IKeyringPair, duration: number): Promise<string> {
+        const method = methods.deeperNode.registerServer;
+        const { baseTxInfo, txOptions, metadataRpc, registry } = await this.getTransactionArgs(deviceKeyPair.address);
+        const unsigned = method({ durationEras: duration }, baseTxInfo, txOptions);
+        const signingPayload = construct.signingPayload(unsigned, { registry }); // 签名原文
+        const signature = await this.signWith(deviceKeyPair, signingPayload, registry, metadataRpc); // 签名值
+        const tx = construct.signedTx(unsigned, signature, { metadataRpc, registry }); // 带有签名的交易
+        return await this.sendTx(tx);
+    }
+
+    // json无法处理大整数，因此转账时使用string来表示金额
+    async transfer(deviceKeyPair: IKeyringPair, dest: string, value: string) {
+        const method = methods.balances.transfer;
+        const { baseTxInfo, txOptions, metadataRpc, registry } = await this.getTransactionArgs(deviceKeyPair.address);
+        const unsigned = method({ dest, value }, baseTxInfo, txOptions);
+        const signingPayload = construct.signingPayload(unsigned, { registry }); // 签名原文
+        const signature = await this.signWith(deviceKeyPair, signingPayload, registry, metadataRpc); // 签名值
+        const tx = construct.signedTx(unsigned, signature, { metadataRpc, registry }); // 带有签名的交易
+        return await this.sendTx(tx);
+    }
+
+    async getTransactionArgs(address: string) {
+        const {
+            specVersion,
+            txVersion: transactionVersion,
+            specName,
+            metadata: metadataRpc,
+            chainName,
+            genesisHash,
+        } = await this.getTransactionMaterial();
+        const registry = getRegistry({
+            chainName,
+            specName,
+            specVersion,
+            metadataRpc,
+        });
+
+        const block = await this.getLatestBlock();
+        const { nonce: index } = await this.getAccountBalanceInfo(address);
+
+        if (this.cachedNonce === 0) {
+            this.cachedNonce = index;
+        } else if (index <= this.cachedNonce) {
+            this.cachedNonce++;
+        }
+        const baseTxInfo = {
+            address: address,
+            blockHash: block.hash,
+            blockNumber: block.number,
+            eraPeriod: 64, // not sure, use default value!
+            genesisHash,
+            metadataRpc,
+            nonce: this.cachedNonce,
+            specVersion,
+            tip: 0,
+            transactionVersion,
+        };
+        const txOptions = { metadataRpc, registry };
+
+        return {
+            baseTxInfo,
+            txOptions,
+            metadataRpc,
+            registry,
+        };
+    }
+
+    async signWith(pair: IKeyringPair, signingPayload: string, registry: TypeRegistry, metadataRpc: `0x${string}`): Promise<`0x${string}`> {
+        registry.setMetadata(createMetadata(registry, metadataRpc));
+
+        const { signature } = registry
+            .createType('ExtrinsicPayload', signingPayload, {
+                version: EXTRINSIC_VERSION,
+            })
+            .sign(pair);
+
+        return signature;
     }
 }
 
@@ -139,11 +253,58 @@ interface IAccountBalance {
 
 function convertAccountBalance(raw: IAccountBalanceResponse): IAccountBalance {
     return {
-        nonce: Number.parseInt(raw.nonce),
+        nonce: parseInt(raw.nonce),
         tokenSymbol: raw.tokenSymbol,
         free: BigInt(raw.free),
         reserved: BigInt(raw.reserved),
         miscFrozen: BigInt(raw.miscFrozen),
         feeFrozen: BigInt(raw.feeFrozen),
+    };
+}
+
+interface ITransactionMaterialResponse {
+    at: IAtRaw;
+    genesisHash: string;
+    chainName: string;
+    specName: string;
+    specVersion: string;
+    txVersion: string;
+    metadata: `0x${string}`;
+}
+
+interface ITransactionMaterial {
+    genesisHash: string;
+    chainName: string;
+    specName: 'deeper-chain';
+    specVersion: number;
+    txVersion: number;
+    metadata: `0x${string}`;
+}
+
+function convertTransactionMaterial(raw: ITransactionMaterialResponse): ITransactionMaterial {
+    return {
+        genesisHash: raw.genesisHash,
+        chainName: raw.chainName,
+        specName: 'deeper-chain',
+        specVersion: parseInt(raw.specVersion),
+        txVersion: parseInt(raw.txVersion),
+        metadata: raw.metadata,
+    };
+}
+
+interface IBlockHeaderResponse {
+    'number': string;
+    hash: string;
+}
+
+interface IBlockHeader {
+    'number': number;
+    hash: string;
+}
+
+function convertBlockHeader(raw: IBlockHeaderResponse): IBlockHeader {
+    return {
+        'number': parseInt(raw.number),
+        hash: raw.hash,
     };
 }
