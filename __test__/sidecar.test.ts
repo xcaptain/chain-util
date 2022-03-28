@@ -1,5 +1,10 @@
-import { testSideCar } from '../src/sidecar';
+import { testSideCar } from '../src';
 import { Keyring } from '@polkadot/api';
+import {cryptoWaitReady} from '@polkadot/util-crypto';
+
+beforeAll(async () => {
+    await cryptoWaitReady();
+});
 
 test('can query credit', async () => {
     const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'; // Alice

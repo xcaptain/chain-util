@@ -1,6 +1,6 @@
 {
   "name": "chain-util",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "utils for deeper-chain",
   "scripts": {
     "test": "jest --runInBand --forceExit",
@@ -8,10 +8,11 @@
   },
   "author": "",
   "license": "ISC",
+  "main": "./dist/index.js",
   "dependencies": {
-    "@polkadot/api": "^7.2.1",
+    "@polkadot/api": "^7.12.1",
     "axios": "^0.26.0",
-    "txwrapper-deeper": "^1.0.0"
+    "txwrapper-deeper": "^1.1.0"
   },
   "devDependencies": {
     "@types/jest": "^27.4.1",
