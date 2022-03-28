@@ -1,6 +1,6 @@
 {
   "name": "chain-util",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "utils for deeper-chain",
   "scripts": {
     "test": "jest --runInBand --forceExit",
