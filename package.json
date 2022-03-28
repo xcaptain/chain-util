@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "utils for deeper-chain",
   "scripts": {
-    "test": "jest --runInBand --forceExit"
+    "test": "jest --runInBand --forceExit",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",

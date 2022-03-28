@@ -1,4 +1,7 @@
 {
+  "exclude": [
+    "__test__"
+  ],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
 

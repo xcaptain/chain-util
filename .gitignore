@@ -4,3 +4,4 @@ deeper-chain.compact.wasm
 package-lock.json
 yarn.lock
 /lib
+/dist
