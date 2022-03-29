@@ -21,13 +21,13 @@ export class SideCar {
         this.cachedNonce = 0;
     }
 
-    async getUserCreditData(address: string): Promise<IUserCredit> {
+    async getUserCredit(address: string): Promise<number> {
         const res = await this.client.get<IStorageResponse<IUserCreditRaw>>(`/pallets/credit/storage/UserCredit`, {
             params: {
                 key1: address,
             },
         });
-        return convertUserCreditRaw(res.data.value);
+        return res.data.value ? parseInt(res.data.value.credit) : 0;
     }
 
     async getTotalChannelBalance(address: string): Promise<BigInt> {
@@ -183,7 +183,7 @@ interface IStorageResponse<T> {
     palletIndex: string;
     storageItem: string;
     key1: string;
-    value: T
+    value?: T
 }
 
 interface IUserCreditRaw {
