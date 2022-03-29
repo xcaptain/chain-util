@@ -3,7 +3,7 @@ import { construct, getRegistry, createMetadata, methods, TypeRegistry } from 't
 import { IKeyringPair } from '@polkadot/types/types';
 import { EXTRINSIC_VERSION } from '@polkadot/types/extrinsic/v4/Extrinsic';
 
-class SideCar {
+export class SideCar {
     readonly client: AxiosInstance;
     cachedNonce: number;
 
