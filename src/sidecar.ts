@@ -249,20 +249,20 @@ interface IAccountBalanceResponse {
 interface IAccountBalance {
     nonce: number;
     tokenSymbol: string;
-    free: string;
-    reserved: string;
-    miscFrozen: string;
-    feeFrozen: string;
+    free: BigInt;
+    reserved: BigInt;
+    miscFrozen: BigInt;
+    feeFrozen: BigInt;
 }
 
 function convertAccountBalance(raw: IAccountBalanceResponse): IAccountBalance {
     return {
         nonce: parseInt(raw.nonce),
         tokenSymbol: raw.tokenSymbol,
-        free: raw.free,
-        reserved: raw.reserved,
-        miscFrozen: raw.miscFrozen,
-        feeFrozen: raw.feeFrozen,
+        free: BigInt(raw.free),
+        reserved: BigInt(raw.reserved),
+        miscFrozen: BigInt(raw.miscFrozen),
+        feeFrozen: BigInt(raw.feeFrozen),
     };
 }
 
