@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosRequestHeaders } from 'axios';
 import { construct, getRegistry, createMetadata, methods, TypeRegistry } from 'txwrapper-deeper';
 import { IKeyringPair } from '@polkadot/types/types';
 import { EXTRINSIC_VERSION } from '@polkadot/types/extrinsic/v4/Extrinsic';
@@ -7,11 +7,15 @@ export class SideCar {
     readonly client: AxiosInstance;
     cachedNonce: number;
 
-    constructor(sideCarURL: string, timeoutMs: number) {
+    constructor(sideCarURL: string, timeoutMs: number, deviceId: string) {
+        const headers: AxiosRequestHeaders = { 'Content-Type': 'application/json' }
+        if (deviceId) {
+            headers['X-Device-Id'] = deviceId;
+        }
         this.client = axios.create({
             baseURL: sideCarURL,
             timeout: timeoutMs,
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             responseType: 'json',
         });
         this.cachedNonce = 0;
@@ -152,7 +156,7 @@ export class SideCar {
     }
 }
 
-export const testSideCar = new SideCar('http://127.0.0.1:8080', 10000);
+export const testSideCar = new SideCar('http://127.0.0.1:8080', 10000, '');
 
 // {
 //     "at": {
@@ -245,20 +249,20 @@ interface IAccountBalanceResponse {
 interface IAccountBalance {
     nonce: number;
     tokenSymbol: string;
-    free: BigInt;
-    reserved: BigInt;
-    miscFrozen: BigInt;
-    feeFrozen: BigInt;
+    free: string;
+    reserved: string;
+    miscFrozen: string;
+    feeFrozen: string;
 }
 
 function convertAccountBalance(raw: IAccountBalanceResponse): IAccountBalance {
     return {
         nonce: parseInt(raw.nonce),
         tokenSymbol: raw.tokenSymbol,
-        free: BigInt(raw.free),
-        reserved: BigInt(raw.reserved),
-        miscFrozen: BigInt(raw.miscFrozen),
-        feeFrozen: BigInt(raw.feeFrozen),
+        free: raw.free,
+        reserved: raw.reserved,
+        miscFrozen: raw.miscFrozen,
+        feeFrozen: raw.feeFrozen,
     };
 }
 

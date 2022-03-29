@@ -13,7 +13,7 @@ test('can query credit', async () => {
     expect(credit.credit).toBe(100);
 });
 
-test('can query balance', async () => {
+test.only('can query balance', async () => {
     const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'; // Alice
     const balance = await testSideCar.getAccountBalanceInfo(address);
 
