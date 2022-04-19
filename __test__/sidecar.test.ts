@@ -45,3 +45,11 @@ test('can transfer', async () => {
     const hash = await testSideCar.transfer(alice, bob.address, '1000000000000000000000000');
     expect(hash.length).toBe(66);
 });
+
+test('evm device pair', async () => {
+    const keyring = new Keyring({ type: 'sr25519' });
+    const alice = keyring.addFromUri('//Alice');
+
+    const hash = await testSideCar.devicePairMultiAccounts(alice, new Uint8Array(20), new Uint8Array(65));
+    expect(hash.length).toBe(66);
+});
