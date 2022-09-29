@@ -97,16 +97,6 @@ export class SideCar {
         return await this.sendTx(tx);
     }
 
-    async devicePairMultiAccounts(deviceKeyPair: IKeyringPair, ethAddress: Uint8Array, ethSignature: Uint8Array) {
-        const method = methods.evm.devicePairMultiAccounts;
-        const { baseTxInfo, txOptions, metadataRpc, registry } = await this.getTransactionArgs(deviceKeyPair.address);
-        const unsigned = method({ ethAddress: ethAddress.toString(), ethSignature: ethSignature.toString() }, baseTxInfo, txOptions);
-        const signingPayload = construct.signingPayload(unsigned, { registry }); // 签名原文
-        const signature = await this.signWith(deviceKeyPair, signingPayload, registry, metadataRpc); // 签名值
-        const tx = construct.signedTx(unsigned, signature, { metadataRpc, registry }); // 带有签名的交易
-        return await this.sendTx(tx);
-    }
-
     async getTransactionArgs(address: string) {
         const {
             specVersion,
@@ -166,7 +156,7 @@ export class SideCar {
     }
 }
 
-export const testSideCar = new SideCar('http://127.0.0.1:8000', 10000, '');
+export const testSideCar = new SideCar('http://127.0.0.1:8080', 10000, '');
 
 // {
 //     "at": {
